@@ -91,10 +91,10 @@ def create():
         exit()
 
     try:
-        # get the host name and the port number ready to be ready to connect to the LS server
+        # get the host name and the port number ready to be ready to connect to the server
         addr = socket.gethostbyname(addressAndPort[0])
 
-        # now connect to the LS server
+        # now connect to the server
         server_binding = (addr, int(addressAndPort[1]))
         s.connect(server_binding)
         print("[C]: Connected to the server.")
@@ -102,13 +102,41 @@ def create():
         print("[C]: There was a problem connecting to the server. Please try again.")
         exit()
 
-    # send LS the host name to look up
-    message = "create"
-    s.send(message.encode('utf-8'))
+    # let the server know which command the client wants to use
+    s.send("create".encode('utf-8'))
 
-    # print the data received from the LS to RESOLVED.txt
-    data_from_server = s.recv(500)
-    print("[C]: Data received from LS server: {}".format(data_from_server.decode('utf-8')) + "\n")
+    # reply from the server that tells the client that it is ready to go
+    data_from_server = s.recv(1024)
+    if data_from_server != "create":
+        print("[C]: ERROR: An issue occurred when using the 'create' command. Please try again.")
+        return
+
+    # send the server the project name
+    s.send(sys.argv[2].encode('utf-8'))
+
+    # get response from the server
+    data_from_server = s.recv(1024)
+    if data_from_server == "FOUND":
+        print("[C]: There is already a project named '" + str(sys.argv[2]) + "' in the server.")
+    if data_from_server == "ERROR":
+        print("[C]: There was an error making the new project in the server. Please try again")
+    if data_from_server == "DONE":
+        print("[C]: The new project directory for: '" + str(sys.argv[2]) + "' has been made.")
+
+        # create a local version of the new project as well with a Manifest.txt inside
+        parentPath = os.path.dirname(os.path.abspath(__file__))
+        newProJPath = os.path.join(parentPath, str(sys.argv[2]))
+        os.mkdir(newProJPath)
+        manifestPath = os.path.join(parentPath, str(sys.argv[2]), "Manifest.txt")
+        try:
+            f = open(manifestPath, "w+")
+            f.close()
+            s.send("DONE".encode('utf-8'))
+        except IOError:
+            print("[S]: ERROR: There was a problem making the Manifest.txt file in the new project. Please try again.\n")
+            s.send("ERROR".encode('utf-8'))
+            os.rmdir(newProJPath)
+
     # close the socket
     s.close()
 

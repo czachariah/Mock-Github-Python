@@ -5,6 +5,7 @@ import socket
 import sys
 from _thread import *
 import threading
+import os
 
 lock = threading.Lock()
 
@@ -39,13 +40,47 @@ def server():
 
 
 def serverAction(c):
-    data = c.recv(1024)
-    print("[S]: From client: " + data)
+    action = c.recv(1024)
 
-    c.send(data + " received")
+    if action == "create":
+        # send the command back to the client to let it know that it ready to receive command specific info
+        c.send("create".encode('utf-8'))
+
+        # get the new project name
+        data = c.recv(1024)
+
+        # check the current directory for the project folder
+        isFound = os.path.isdir(data)
+
+        if isFound:
+            c.send("FOUND".encode('utf-8'))
+        else:
+            parentPath = os.path.dirname(os.path.abspath(__file__))
+            newProJPath = os.path.join(parentPath, data)
+            os.mkdir(newProJPath)
+            manifestPath = os.path.join(parentPath, data, "Manifest.txt")
+            try:
+                f = open(manifestPath, "w+")
+                f.close()
+            except IOError:
+                print("[S]: There was an error creating the Manifest.txt for the new project.")
+                c.send("ERROR".encode('utf-8'))
+                lock.release()
+                c.close()
+                print("[S]: Client connection dealt with and terminated.\n")
+                return
+
+            print("[S]: New project: '" + data + "' created.")
+            c.send("DONE".encode('utf-8'))
+
+            lastData = c.recv(1024)
+            if lastData == "ERROR":
+                os.remove(manifestPath)
+                os.rmdir(newProJPath)
+    else:
+        print("???")
 
     lock.release()
-
     c.close()
     print("[S]: Client connection dealt with and terminated.\n")
 
