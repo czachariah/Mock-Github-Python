@@ -63,6 +63,7 @@ def configure():
 
     cfd.write(serverAdd + "\n")
     cfd.write(str(serverPort) + "\n")
+    cfd.close()
 
     print("[C]: Server address and port number have been added to the config.txt file.")
 
@@ -82,7 +83,34 @@ def create():
         print("[C]: ERROR: Must first run the configure command before trying to connect with the server.")
         return
 
-    print(addressAndPort)
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print("[C]: Socket created to connect to server.")
+    except socket.error as err:
+        print('[C]: Socket Open Error: {} \n'.format(err))
+        exit()
+
+    try:
+        # get the host name and the port number ready to be ready to connect to the LS server
+        addr = socket.gethostbyname(addressAndPort[0])
+
+        # now connect to the LS server
+        server_binding = (addr, int(addressAndPort[1]))
+        s.connect(server_binding)
+        print("[C]: Connected to the server.")
+    except:
+        print("[C]: There was a problem connecting to the server. Please try again.")
+        exit()
+
+    # send LS the host name to look up
+    message = "create"
+    s.send(message.encode('utf-8'))
+
+    # print the data received from the LS to RESOLVED.txt
+    data_from_server = s.recv(500)
+    print("[C]: Data received from LS server: {}".format(data_from_server.decode('utf-8')) + "\n")
+    # close the socket
+    s.close()
 
 
 if __name__ == '__main__':
