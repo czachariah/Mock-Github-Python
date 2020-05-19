@@ -7,43 +7,6 @@ import os
 import hashlib
 
 
-def client():
-    if len(sys.argv) < 2:
-        print("[C]: ERROR: Not enough arguments given. Please try again.")
-        print("[C]: Closing client program.")
-        exit()
-    if sys.argv[1] == "configure":
-        configure()
-    elif sys.argv[1] == "checkout":
-        print("[C]: checkout")
-    elif sys.argv[1] == "update":
-        print("[C]: update")
-    elif sys.argv[1] == "upgrade":
-        print("[C]: upgrade")
-    elif sys.argv[1] == "commit":
-        print("[C]: commit")
-    elif sys.argv[1] == "push":
-        print("[C]: push")
-    elif sys.argv[1] == "create":
-        create()
-    elif sys.argv[1] == "destroy":
-        print("[C]: destroy")
-    elif sys.argv[1] == "add":
-        add()
-    elif sys.argv[1] == "remove":
-        print("[C]: remove")
-    elif sys.argv[1] == "currentversion":
-        print("[C]: currentversion")
-    elif sys.argv[1] == "history":
-        print("[C]: history")
-    elif sys.argv[1] == "rollback":
-        print("[C]: rollback")
-    else:
-        print("[C]: ERROR: Invalid command used. Please try again.")
-    print("[C]: Closing client program.")
-    exit()
-
-
 def configure():
     if len(sys.argv) != 4:
         print("[C]: ERROR: Please make sure to include the HostName/IPAddress and PortNumber of the server.")
@@ -145,6 +108,10 @@ def create():
     s.close()
 
 
+def remove():
+    print("at remove method")
+
+
 def add():
     if len(sys.argv) != 4:
         print("[C]: ERROR: Please make sure to include the project name and the file name for the arguments.")
@@ -204,8 +171,6 @@ def add():
         dataList.append("N")
         print("[C]: New file added to the Manifest.txt.")
 
-    print(dataList)
-
     # write into the Manifest
     os.remove(manifestPath)
     f = open(manifestPath, "a+")
@@ -218,6 +183,43 @@ def add():
             f.write(x + "\n")
             count = 1
     f.close()
+
+
+def client():
+    if len(sys.argv) < 2:
+        print("[C]: ERROR: Not enough arguments given. Please try again.")
+        print("[C]: Closing client program.")
+        exit()
+    if sys.argv[1] == "configure":
+        configure()
+    elif sys.argv[1] == "checkout":
+        print("[C]: checkout")
+    elif sys.argv[1] == "update":
+        print("[C]: update")
+    elif sys.argv[1] == "upgrade":
+        print("[C]: upgrade")
+    elif sys.argv[1] == "commit":
+        print("[C]: commit")
+    elif sys.argv[1] == "push":
+        print("[C]: push")
+    elif sys.argv[1] == "create":
+        create()
+    elif sys.argv[1] == "destroy":
+        print("[C]: destroy")
+    elif sys.argv[1] == "add":
+        add()
+    elif sys.argv[1] == "remove":
+        remove()
+    elif sys.argv[1] == "currentversion":
+        print("[C]: currentversion")
+    elif sys.argv[1] == "history":
+        print("[C]: history")
+    elif sys.argv[1] == "rollback":
+        print("[C]: rollback")
+    else:
+        print("[C]: ERROR: Invalid command used. Please try again.")
+    print("[C]: Closing client program.")
+    exit()
 
 
 if __name__ == '__main__':
