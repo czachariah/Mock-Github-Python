@@ -54,6 +54,7 @@ def serverAction(c):
 
         if isFound:
             c.send("FOUND".encode('utf-8'))
+            print("[S]: Another directory with the same name (" + str(data) + ") has been found.")
         else:
             parentPath = os.path.dirname(os.path.abspath(__file__))
             newProJPath = os.path.join(parentPath, data)
