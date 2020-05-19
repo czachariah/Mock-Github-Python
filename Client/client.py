@@ -109,7 +109,58 @@ def create():
 
 
 def remove():
-    print("at remove method")
+    if len(sys.argv) != 4:
+        print("[C]: ERROR: Please make sure to include the project name and the file name for the arguments.")
+        return
+        # check if the file is in the directory already
+    parentPath = os.path.dirname(os.path.abspath(__file__))
+    filePath = os.path.join(parentPath, str(sys.argv[2]), str(sys.argv[3]))
+    try:
+        f = open(filePath, "r")
+        f.close()
+        print("[C]: Please make sure that the file is removed from the project directory.")
+        return
+    except IOError:
+        print("[C]: Starting to update Manifest ... ")
+
+    manifestPath = os.path.join(parentPath, str(sys.argv[2]), "Manifest.txt")
+
+    # separate the lines into words and store each word into a list
+    dataList = list()
+    try:
+        file = open(manifestPath, "r")
+        for line in file:
+            for word in line.replace("\n", "").split(" , "):
+                dataList.append(word)
+    except IOError:
+        print("[C]: ERROR opening the Manifest.txt file. Please try again.")
+        return
+    file.close()
+
+    if filePath in dataList:
+        index = dataList.index(filePath)
+        dataList.pop(index)
+        dataList.pop(index)
+        dataList.pop(index)
+        dataList.pop(index)
+    else:
+        print("[C]: The file (" + str(sys.argv[3]) + ") was not found in the Manifest.txt in the project (" + str(sys.argv[2]) + ") directory.")
+        return
+
+    # write into the Manifest
+    os.remove(manifestPath)
+    f = open(manifestPath, "a+")
+    count = 1
+    for x in dataList:
+        if count != 4:
+            f.write(x + " , ")
+            count = count + 1
+        else:
+            f.write(x + "\n")
+            count = 1
+    f.close()
+    print("[C]: Manifest updated.")
+    return
 
 
 def add():
@@ -123,6 +174,7 @@ def add():
     try:
         f = open(filePath, "r")
         f.close()
+        print("[C]: Starting to update Manifest ... ")
     except IOError:
         print("[C]: ERROR: There was a problem opening the file. Please try running the command again.\n")
         return
@@ -137,7 +189,6 @@ def add():
             buf = afile.read(blockSize)
     totalHash = hasher.hexdigest()
 
-    # get the number of lines in the Manifest.txt file for the current project
     manifestPath = os.path.join(parentPath, str(sys.argv[2]), "Manifest.txt")
 
     # separate the lines into words and store each word into a list
@@ -169,7 +220,6 @@ def add():
         dataList.append(str(1))
         dataList.append(totalHash)
         dataList.append("N")
-        print("[C]: New file added to the Manifest.txt.")
 
     # write into the Manifest
     os.remove(manifestPath)
@@ -183,6 +233,8 @@ def add():
             f.write(x + "\n")
             count = 1
     f.close()
+    print("[C]: Manifest updated.")
+    return
 
 
 def client():
