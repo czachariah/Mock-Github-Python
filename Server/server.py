@@ -62,6 +62,7 @@ def serverAction(c):
             manifestPath = os.path.join(parentPath, data, "Manifest.txt")
             try:
                 f = open(manifestPath, "w+")
+                f.write("0\n")
                 f.close()
             except IOError:
                 print("[S]: There was an error creating the Manifest.txt for the new project.")
@@ -78,6 +79,28 @@ def serverAction(c):
             if lastData == "ERROR":
                 os.remove(manifestPath)
                 os.rmdir(newProJPath)
+    elif action == "update":
+        # send the command back to the client to let it know that it ready to receive command specific info
+        c.send("update".encode('utf-8'))
+
+        # get the new project name
+        data = c.recv(1024)
+
+        # check the current directory for the project folder
+        isFound = os.path.isdir(data)
+
+        if isFound:
+            print("[S]: The project directory has been found.")
+            c.send("FOUND".encode('utf-8'))
+
+
+        else:
+            print("[S]: The project directory has not been found.")
+            c.send("ERROR".encode('utf-8'))
+            lock.release()
+            c.close()
+            print("[S]: Client connection dealt with and terminated.\n")
+            return
     else:
         print("???")
 

@@ -96,6 +96,7 @@ def create():
         manifestPath = os.path.join(parentPath, str(sys.argv[2]), "Manifest.txt")
         try:
             f = open(manifestPath, "w+")
+            f.write("0\n")
             f.close()
             s.send("DONE".encode('utf-8'))
         except IOError:
@@ -106,6 +107,7 @@ def create():
             return
     # close the socket
     s.close()
+    return
 
 
 def remove():
@@ -138,6 +140,9 @@ def remove():
     file.close()
 
     if filePath in dataList:
+        oldV = int(dataList[0])
+        newV = oldV + 1
+        dataList[0] = str(newV)
         index = dataList.index(filePath)
         dataList.pop(index)
         dataList.pop(index)
@@ -150,6 +155,7 @@ def remove():
     # write into the Manifest
     os.remove(manifestPath)
     f = open(manifestPath, "a+")
+    f.write(str(dataList.pop(0)) + "\n")
     count = 1
     for x in dataList:
         if count != 4:
@@ -206,9 +212,12 @@ def add():
     if filePath in dataList:
         index = dataList.index(filePath)
         if dataList[index+2] == totalHash:
-            print("[C]: This file already exists in the Manifest.txt.")
+            print("[C]: This file already exists in the Manifest.txt. and is up-to-date")
             return
         else:
+            oldV = int(dataList[0])
+            newV = oldV + 1
+            dataList[0] = str(newV)
             dataList[index + 2] = totalHash
             oldV = int(dataList[index + 1])
             newV = oldV + 1
@@ -216,6 +225,9 @@ def add():
             dataList[index + 3] = "N"
 
     else:
+        oldV = int(dataList[0])
+        newV = oldV + 1
+        dataList[0] = str(newV)
         dataList.append(filePath)
         dataList.append(str(1))
         dataList.append(totalHash)
@@ -224,6 +236,7 @@ def add():
     # write into the Manifest
     os.remove(manifestPath)
     f = open(manifestPath, "a+")
+    f.write(str(dataList.pop(0)) + "\n")
     count = 1
     for x in dataList:
         if count != 4:
@@ -237,6 +250,70 @@ def add():
     return
 
 
+def update():
+    if len(sys.argv) != 3:
+        print("[C]: ERROR: Please make sure to include the project name for the argument.")
+        return
+
+    addressAndPort = list()
+    try:
+        configFD = open("config.txt", "r")
+        for line in configFD:
+            line = line.replace("\r", "").replace("\n", "")
+            addressAndPort.append(line)
+    except IOError:
+        print("[C]: ERROR: Must first run the configure command before trying to connect with the server.")
+        return
+
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print("[C]: Socket created to connect to server.")
+    except socket.error as err:
+        print('[C]: Socket Open Error: {} \n'.format(err))
+        return
+
+    try:
+        # get the host name and the port number ready to be ready to connect to the server
+        addr = socket.gethostbyname(addressAndPort[0])
+
+        # now connect to the server
+        server_binding = (addr, int(addressAndPort[1]))
+        s.connect(server_binding)
+        print("[C]: Connected to the server.")
+    except:
+        print("[C]: There was a problem connecting to the server. Please try again.")
+        s.close()
+        return
+
+    # let the server know which command the client wants to use
+    s.send("update".encode('utf-8'))
+
+    # reply from the server that tells the client that it is ready to go
+    data_from_server = s.recv(1024)
+    if data_from_server != "update":
+        print("[C]: ERROR: An issue occurred when using the 'create' command. Please try again.")
+        s.close()
+        return
+
+    # send the server the project name
+    s.send(sys.argv[2].encode('utf-8'))
+
+    # get response from the server
+    data_from_server = s.recv(1024)
+
+    if data_from_server == "FOUND":
+        print("[C]: There is already a project named '" + str(sys.argv[2]) + "' in the server.")
+
+
+    else:
+        print("[C]: The project directory was not found on the server side. Please try again or resolve the issue manually.")
+        s.close()
+        return
+
+    # close the socket
+    s.close()
+
+
 def client():
     if len(sys.argv) < 2:
         print("[C]: ERROR: Not enough arguments given. Please try again.")
@@ -247,7 +324,7 @@ def client():
     elif sys.argv[1] == "checkout":
         print("[C]: checkout")
     elif sys.argv[1] == "update":
-        print("[C]: update")
+        update()
     elif sys.argv[1] == "upgrade":
         print("[C]: upgrade")
     elif sys.argv[1] == "commit":
