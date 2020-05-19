@@ -4,11 +4,13 @@
 import socket
 import sys
 import os
+import hashlib
 
 
 def client():
     if len(sys.argv) < 2:
         print("[C]: ERROR: Not enough arguments given. Please try again.")
+        print("[C]: Closing client program.")
         exit()
     if sys.argv[1] == "configure":
         configure()
@@ -27,7 +29,7 @@ def client():
     elif sys.argv[1] == "destroy":
         print("[C]: destroy")
     elif sys.argv[1] == "add":
-        print("[C]: add")
+        add()
     elif sys.argv[1] == "remove":
         print("[C]: remove")
     elif sys.argv[1] == "currentversion":
@@ -38,7 +40,6 @@ def client():
         print("[C]: rollback")
     else:
         print("[C]: ERROR: Invalid command used. Please try again.")
-        exit()
     print("[C]: Closing client program.")
     exit()
 
@@ -88,7 +89,7 @@ def create():
         print("[C]: Socket created to connect to server.")
     except socket.error as err:
         print('[C]: Socket Open Error: {} \n'.format(err))
-        exit()
+        return
 
     try:
         # get the host name and the port number ready to be ready to connect to the server
@@ -100,7 +101,8 @@ def create():
         print("[C]: Connected to the server.")
     except:
         print("[C]: There was a problem connecting to the server. Please try again.")
-        exit()
+        s.close()
+        return
 
     # let the server know which command the client wants to use
     s.send("create".encode('utf-8'))
@@ -109,6 +111,7 @@ def create():
     data_from_server = s.recv(1024)
     if data_from_server != "create":
         print("[C]: ERROR: An issue occurred when using the 'create' command. Please try again.")
+        s.close()
         return
 
     # send the server the project name
@@ -136,9 +139,85 @@ def create():
             print("[S]: ERROR: There was a problem making the Manifest.txt file in the new project. Please try again.\n")
             s.send("ERROR".encode('utf-8'))
             os.rmdir(newProJPath)
-
+            s.close()
+            return
     # close the socket
     s.close()
+
+
+def add():
+    if len(sys.argv) != 4:
+        print("[C]: ERROR: Please make sure to include the project name and the file name for the arguments.")
+        return
+
+    # check if the file is in the directory already
+    parentPath = os.path.dirname(os.path.abspath(__file__))
+    filePath = os.path.join(parentPath, str(sys.argv[2]), str(sys.argv[3]))
+    try:
+        f = open(filePath, "r")
+        f.close()
+    except IOError:
+        print("[C]: ERROR: There was a problem opening the file. Please try running the command again.\n")
+        return
+
+    # using SHA1 hashing here
+    blockSize = 65536
+    hasher = hashlib.sha1()
+    with open(filePath, 'rb') as afile:
+        buf = afile.read(blockSize)
+        while len(buf) > 0:
+            hasher.update(buf)
+            buf = afile.read(blockSize)
+    totalHash = hasher.hexdigest()
+
+    # get the number of lines in the Manifest.txt file for the current project
+    manifestPath = os.path.join(parentPath, str(sys.argv[2]), "Manifest.txt")
+
+    # separate the lines into words and store each word into a list
+    dataList = list()
+    try:
+        file = open(manifestPath, "r")
+        for line in file:
+            for word in line.replace("\n", "").split(" , "):
+                dataList.append(word)
+    except IOError:
+        print("[C]: ERROR opening the Manifest.txt file. Please try again.")
+        return
+    file.close()
+
+    if filePath in dataList:
+        index = dataList.index(filePath)
+        if dataList[index+2] == totalHash:
+            print("[C]: This file already exists in the Manifest.txt.")
+            return
+        else:
+            dataList[index + 2] = totalHash
+            oldV = int(dataList[index + 1])
+            newV = oldV + 1
+            dataList[index + 1] = str(newV)
+            dataList[index + 3] = "N"
+
+    else:
+        dataList.append(filePath)
+        dataList.append(str(1))
+        dataList.append(totalHash)
+        dataList.append("N")
+        print("[C]: New file added to the Manifest.txt.")
+
+    print(dataList)
+
+    # write into the Manifest
+    os.remove(manifestPath)
+    f = open(manifestPath, "a+")
+    count = 1
+    for x in dataList:
+        if count != 4:
+            f.write(x + " , ")
+            count = count + 1
+        else:
+            f.write(x + "\n")
+            count = 1
+    f.close()
 
 
 if __name__ == '__main__':
