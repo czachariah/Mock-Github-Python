@@ -302,16 +302,43 @@ def update():
     data_from_server = s.recv(1024)
 
     if data_from_server == "FOUND":
-        print("[C]: There is already a project named '" + str(sys.argv[2]) + "' in the server.")
+        print("[C]: Waiting for the Manifest.txt contents from the server ...")
+        parentPath = os.path.dirname(os.path.abspath(__file__))
+        serverManifestPath = os.path.join(parentPath, str(sys.argv[2]), "Manifest_Server.txt")
+        try:
+            f = open(serverManifestPath, "w+")
+            s.send("WAITING".encode('utf-8'))
+            signal = s.recv(1024)
+            if signal == "ERROR":
+                print("[C]: Server had problems opening the Manifest.txt. Please try again.\n")
+                s.close()
+                return
+            else:
+                s.send("READY".encode('utf-8'))
+            while True:
+                data = s.recv(1024)
+                if not data:
+                    break
+                f.write(data)
+            f.close()
+            s.send("DONE".encode('utf-8'))
+            print("[C]: The contents have been received. Now doing comparisons ...")
 
 
+
+        except IOError:
+            print("[S]: ERROR: There was a problem making the Manifest_Server.txt file in the project. Please try again.\n")
+            s.send("ERROR".encode('utf-8'))
+            s.close()
+            return
     else:
-        print("[C]: The project directory was not found on the server side. Please try again or resolve the issue manually.")
+        print("[C]: The project directory was not found on the server side. Please try again or resolve the issue manually.\n")
         s.close()
         return
 
     # close the socket
     s.close()
+    return
 
 
 def client():

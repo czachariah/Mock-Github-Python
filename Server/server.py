@@ -92,8 +92,34 @@ def serverAction(c):
         if isFound:
             print("[S]: The project directory has been found.")
             c.send("FOUND".encode('utf-8'))
-
-
+            signal = c.recv(1024)
+            if signal == "WAITING":
+                parentPath = os.path.dirname(os.path.abspath(__file__))
+                serverManifestPath = os.path.join(parentPath, data, "Manifest.txt")
+                try:
+                    f = open(serverManifestPath, "r")
+                    c.send("OPENED".encode('utf-8'))
+                    # READY
+                    c.recv(1024)
+                    print("[S]: Sending over the Manifest.txt contents inside the project ...")
+                    line = f.read(1024)
+                    while line:
+                        c.send(line)
+                        line = f.read(1024)
+                    f.close()
+                    print("[S]: Contents have been sent.")
+                except:
+                    c.send("ERROR".encode('utf-8'))
+                    lock.release()
+                    c.close()
+                    print("[S]: Client connection dealt with and terminated.\n")
+                    return
+            else:
+                print("[S]: Client had problems getting ready for tranfer.")
+                lock.release()
+                c.close()
+                print("[S]: Client connection dealt with and terminated.\n")
+                return
         else:
             print("[S]: The project directory has not been found.")
             c.send("ERROR".encode('utf-8'))
