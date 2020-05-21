@@ -29,12 +29,12 @@ def configure():
     cfd.write(str(serverPort) + "\n")
     cfd.close()
 
-    print("[C]: Server address and port number have been added to the config.txt file.")
+    print("[C]: Server address and port number have been added to the config.txt file.\n")
 
 
 def create():
     if len(sys.argv) != 3:
-        print("[C]: ERROR: Please make sure to include the project name for the argument.")
+        print("[C]: ERROR: Please make sure to include the project name for the argument.\n")
         return
 
     addressAndPort = list()
@@ -44,7 +44,7 @@ def create():
             line = line.replace("\r", "").replace("\n", "")
             addressAndPort.append(line)
     except IOError:
-        print("[C]: ERROR: Must first run the configure command before trying to connect with the server.")
+        print("[C]: ERROR: Must first run the configure command before trying to connect with the server.\n")
         return
 
     try:
@@ -61,9 +61,9 @@ def create():
         # now connect to the server
         server_binding = (addr, int(addressAndPort[1]))
         s.connect(server_binding)
-        print("[C]: Connected to the server.")
+        print("[C]: Connected to the server.\n")
     except:
-        print("[C]: There was a problem connecting to the server. Please try again.")
+        print("[C]: There was a problem connecting to the server. Please try again.\n")
         s.close()
         return
 
@@ -73,7 +73,7 @@ def create():
     # reply from the server that tells the client that it is ready to go
     data_from_server = s.recv(1024)
     if data_from_server != "create":
-        print("[C]: ERROR: An issue occurred when using the 'create' command. Please try again.")
+        print("[C]: ERROR: An issue occurred when using the 'create' command. Please try again.\n")
         s.close()
         return
 
@@ -83,12 +83,11 @@ def create():
     # get response from the server
     data_from_server = s.recv(1024)
     if data_from_server == "FOUND":
-        print("[C]: There is already a project named '" + str(sys.argv[2]) + "' in the server.")
+        print("[C]: There is already a project named '" + str(sys.argv[2]) + "' in the server.\n")
     if data_from_server == "ERROR":
-        print("[C]: There was an error making the new project in the server. Please try again")
+        print("[C]: There was an error making the new project in the server. Please try again\n")
     if data_from_server == "DONE":
-        print("[C]: The new project directory for: '" + str(sys.argv[2]) + "' has been made.")
-
+        print("[C]: The new project directory for: '" + str(sys.argv[2]) + "' has been made.\n")
         # create a local version of the new project as well with a Manifest.txt inside
         parentPath = os.path.dirname(os.path.abspath(__file__))
         newProJPath = os.path.join(parentPath, str(sys.argv[2]))
@@ -112,7 +111,7 @@ def create():
 
 def remove():
     if len(sys.argv) != 4:
-        print("[C]: ERROR: Please make sure to include the project name and the file name for the arguments.")
+        print("[C]: ERROR: Please make sure to include the project name and the file name for the arguments.\n")
         return
         # check if the file is in the directory already
     parentPath = os.path.dirname(os.path.abspath(__file__))
@@ -120,7 +119,7 @@ def remove():
     try:
         f = open(filePath, "r")
         f.close()
-        print("[C]: Please make sure that the file is removed from the project directory.")
+        print("[C]: Please make sure that the file is removed from the project directory.\n")
         return
     except IOError:
         print("[C]: Starting to update Manifest ... ")
@@ -135,7 +134,7 @@ def remove():
             for word in line.replace("\n", "").split(" , "):
                 dataList.append(word)
     except IOError:
-        print("[C]: ERROR opening the Manifest.txt file. Please try again.")
+        print("[C]: ERROR opening the Manifest.txt file. Please try again.\n")
         return
     file.close()
 
@@ -145,7 +144,7 @@ def remove():
         dataList.pop(index)
         dataList.pop(index)
     else:
-        print("[C]: The file (" + str(sys.argv[3]) + ") was not found in the Manifest.txt in the project (" + str(sys.argv[2]) + ") directory.")
+        print("[C]: The file (" + str(sys.argv[3]) + ") was not found in the Manifest.txt in the project (" + str(sys.argv[2]) + ") directory.\n")
         return
 
     # write into the Manifest
@@ -161,7 +160,7 @@ def remove():
             f.write(x + "\n")
             count = 1
     f.close()
-    print("[C]: Manifest updated.")
+    print("[C]: Manifest updated.\n")
     return
 
 
@@ -201,14 +200,14 @@ def add():
             for word in line.replace("\n", "").split(" , "):
                 dataList.append(word)
     except IOError:
-        print("[C]: ERROR opening the Manifest.txt file. Please try again.")
+        print("[C]: ERROR opening the Manifest.txt file. Please try again.\n")
         return
     file.close()
 
     if filePath in dataList:
         index = dataList.index(filePath)
         if dataList[index+2] == totalHash:
-            print("[C]: This file already exists in the Manifest.txt. and is up-to-date")
+            print("[C]: This file already exists in the Manifest.txt. and is up-to-date\n")
             return
         else:
             dataList[index + 2] = totalHash
@@ -234,7 +233,7 @@ def add():
             f.write(x + "\n")
             count = 1
     f.close()
-    print("[C]: Manifest updated.")
+    print("[C]: Manifest updated.\n")
     return
 
 
@@ -267,7 +266,7 @@ def update():
         # now connect to the server
         server_binding = (addr, int(addressAndPort[1]))
         s.connect(server_binding)
-        print("[C]: Connected to the server.")
+        print("[C]: Connected to the server.\n")
     except:
         print("[C]: There was a problem connecting to the server. Please try again.")
         s.close()
@@ -313,6 +312,7 @@ def update():
             print("[C]: The contents have been received. Now doing comparisons ...")
 
             ManifestPath = os.path.join(parentPath, str(sys.argv[2]), "Manifest.txt")
+
             # put all the contents of the Manifest into a list
             manifestList = list()
             try:
@@ -322,6 +322,8 @@ def update():
                         manifestList.append(word)
             except IOError:
                 print("[C]: ERROR opening the Manifest.txt file. Please try again.")
+                os.remove(serverManifestPath)
+                s.close()
                 return
             file.close()
 
@@ -334,6 +336,8 @@ def update():
                         manifestServerList.append(word)
             except IOError:
                 print("[C]: ERROR opening the Manifest_Server.txt file. Please try again.")
+                os.remove(serverManifestPath)
+                s.close()
                 return
             file.close()
 
@@ -341,53 +345,140 @@ def update():
             UpdatePath = os.path.join(parentPath, str(sys.argv[2]), "Update.txt")
             if os.path.exists(UpdatePath):
                 os.remove(UpdatePath)
+            updateList = list()
+
             try:
                 f = open(UpdatePath, "a+")
-                updateList = list()
-                # gets rid of the Manifest version number in the list
-                manifestServerList.pop(0)
-                manifestList.pop(0)
-                while manifestServerList:
-                    if manifestServerList[0] in manifestList:
-                        index = manifestList.index(manifestServerList[0])
-                        if str(manifestServerList[1]) == str(manifestList[index + 1]):
-                            if str(manifestServerList[2]) != str(manifestList[index + 2]):
-                                print("A" + str(manifestServerList[0]))
-                                updateList.append(str("A"))
-                                updateList.append(str(manifestServerList.pop(0)))
-                                updateList.append(str(manifestServerList.pop(0)))
-                                updateList.append(str(manifestServerList.pop(0)))
-                                manifestList.pop(index)
-                                manifestList.pop(index)
-                                manifestList.pop(index)
-                        else:
-                            print("A" + str(manifestServerList[0]))
-                            updateList.append(str("A"))
-                            updateList.append(str(manifestServerList.pop(0)))
-                            updateList.append(str(manifestServerList.pop(0)))
-                            updateList.append(str(manifestServerList.pop(0)))
-                            manifestList.pop(index)
-                            manifestList.pop(index)
-                            manifestList.pop(index)
-                    else:
-                        print("A" + str(manifestServerList[0]))
-                        updateList.append(str("A"))
-                        updateList.append(str(manifestServerList.pop(0)))
-                        updateList.append(str(manifestServerList.pop(0)))
-                        updateList.append(str(manifestServerList.pop(0)))
-                # now go throgh the client manifest list and find files that the server does not have (these need to be uploaded)
+                serverManifestVersion = int(manifestServerList.pop(0))
+                clientManifestVersion = int(manifestList.pop(0))
+                if clientManifestVersion == serverManifestVersion:
+                    while manifestList:
+                        if manifestList[0] in manifestServerList:
+                            index = manifestServerList.index(manifestList[0])
+                            serverHash = manifestServerList[index + 2]
 
-                # then write all the contents of the updateList into the Update.txt file
+                            blockSize = 65536
+                            hasher = hashlib.sha1()
+                            with open(manifestList[0], 'rb') as afile:
+                                buf = afile.read(blockSize)
+                                while len(buf) > 0:
+                                    hasher.update(buf)
+                                    buf = afile.read(blockSize)
+                            liveHash = hasher.hexdigest()
+
+                            if liveHash == serverHash:
+                                # print("[C]: Up To Date.")
+                                manifestList.pop(0)
+                                manifestList.pop(0)
+                                manifestList.pop(0)
+                            else:
+                                # print("[C]: U : " + str(manifestList[0]))
+                                updateList.append(str("U"))
+                                updateList.append(str(manifestList[0]))
+                                manifestList.pop(0)
+                                manifestList.pop(0)
+                                manifestList.pop(0)
+                        else:
+                            # print("[C]: U : " + str(manifestList[0]))
+                            updateList.append(str("U"))
+                            updateList.append(str(manifestList[0]))
+                            manifestList.pop(0)
+                            manifestList.pop(0)
+                            manifestList.pop(0)
+                else:
+                    while manifestList:
+                        if manifestList[0] in manifestServerList:
+                            index = manifestServerList.index(manifestList[0])
+                            clientFileVersion = int(manifestList[1])
+                            serverFileVersion = int(manifestServerList[index + 1])
+                            if clientFileVersion == serverFileVersion:
+                                blockSize = 65536
+                                hasher = hashlib.sha1()
+                                with open(manifestList[0], 'rb') as afile:
+                                    buf = afile.read(blockSize)
+                                    while len(buf) > 0:
+                                        hasher.update(buf)
+                                        buf = afile.read(blockSize)
+                                liveHash = hasher.hexdigest()
+                                if liveHash == manifestList[2]:
+                                    # print("Up To Date.")
+                                    manifestList.pop(0)
+                                    manifestList.pop(0)
+                                    manifestList.pop(0)
+                                    manifestServerList.pop(index)
+                                    manifestServerList.pop(index)
+                                    manifestServerList.pop(index)
+                                else:
+                                    print("[C]: CONFLICT : " + manifestList[0])
+                                    print("[C]: The file(s) above show some conflict. Please resolve this first and then Update again.\n")
+                                    f.close()
+                                    s.close()
+                                    os.remove(UpdatePath)
+                                    return
+                            else:
+                                blockSize = 65536
+                                hasher = hashlib.sha1()
+                                with open(manifestList[0], 'rb') as afile:
+                                    buf = afile.read(blockSize)
+                                    while len(buf) > 0:
+                                        hasher.update(buf)
+                                        buf = afile.read(blockSize)
+                                liveHash = hasher.hexdigest()
+
+                                if liveHash == manifestList[2]:
+                                    # print("[C]: M : " + str(manifestList[0]))
+                                    updateList.append(str("M"))
+                                    updateList.append(str(manifestList[0]))
+                                    manifestList.pop(0)
+                                    manifestList.pop(0)
+                                    manifestList.pop(0)
+                                    manifestServerList.pop(index)
+                                    manifestServerList.pop(index)
+                                    manifestServerList.pop(index)
+                                else:
+                                    print("[C]: CONFLICT : " + manifestList[0])
+                                    print("[C]: The file(s) above show some conflict. Please resolve this first and then Update again.\n")
+                                    f.close()
+                                    s.close()
+                                    os.remove(UpdatePath)
+                                    return
+                        else:
+                            # print("[C]: D : " + str(manifestList[0]))
+                            updateList.append(str("D"))
+                            updateList.append(str(manifestList[0]))
+                            manifestList.pop(0)
+                            manifestList.pop(0)
+                            manifestList.pop(0)
+                    while manifestServerList:
+                        # print("[C]: A : " + str(manifestServerList[0]))
+                        updateList.append(str("A"))
+                        updateList.append(str(manifestServerList[0]))
+                        manifestServerList.pop(0)
+                        manifestServerList.pop(0)
+                        manifestServerList.pop(0)
+                if not updateList:
+                    print("[C]: Up To Date.\n")
+                    f.close()
+                else:
+                    while updateList:
+                        print("[C]: " + str(updateList[0]) + " , " + str(updateList[1]))
+                        f.write(str(updateList[0]) + " , " + str(updateList[1]) + "\n")
+                        updateList.pop(0)
+                        updateList.pop(0)
+                    print("")
+                    f.close()
             except:
-                print("[C]: ERROR opening the Update.txt file. Please try again.")
+                print("[C]: ERROR opening the Update.txt file. Please try again.\n")
+                os.remove(serverManifestPath)
+                s.close()
                 return
         except IOError:
-            print("[S]: ERROR: There was a problem making the Manifest_Server.txt file in the project. Please try again.\n")
+            print("[S]: ERROR: There was an issue creating the Manifest_Server.txt file. Please try again.\n")
             s.send("ERROR".encode('utf-8'))
             s.close()
             return
     else:
-        print("[C]: The project directory was not found on the server side. Please try again or resolve the issue manually.\n")
+        print("[C]: The project directory was not found on the server side. Please try again.\n")
         s.close()
         return
 
