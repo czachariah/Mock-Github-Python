@@ -278,7 +278,7 @@ def update():
     # reply from the server that tells the client that it is ready to go
     data_from_server = s.recv(1024)
     if data_from_server != "update":
-        print("[C]: ERROR: An issue occurred when using the 'create' command. Please try again.")
+        print("[C]: ERROR: An issue occurred when using the 'update' command. Please try again.")
         s.close()
         return
 
@@ -414,6 +414,7 @@ def update():
                                     f.close()
                                     s.close()
                                     os.remove(UpdatePath)
+                                    os.remove(serverManifestPath)
                                     return
                             else:
                                 blockSize = 65536
@@ -441,6 +442,7 @@ def update():
                                     f.close()
                                     s.close()
                                     os.remove(UpdatePath)
+                                    os.remove(serverManifestPath)
                                     return
                         else:
                             # print("[C]: D : " + str(manifestList[0]))
@@ -459,6 +461,7 @@ def update():
                 if not updateList:
                     print("[C]: Up To Date.\n")
                     f.close()
+                    os.remove(serverManifestPath)
                 else:
                     while updateList:
                         print("[C]: " + str(updateList[0]) + " , " + str(updateList[1]))
@@ -467,6 +470,7 @@ def update():
                         updateList.pop(0)
                     print("")
                     f.close()
+                    os.remove(serverManifestPath)
             except:
                 print("[C]: ERROR opening the Update.txt file. Please try again.\n")
                 os.remove(serverManifestPath)
@@ -487,6 +491,75 @@ def update():
     return
 
 
+def upgrade():
+    if len(sys.argv) != 3:
+        print("[C]: ERROR: Please make sure to include the project name for the argument.")
+        return
+
+    addressAndPort = list()
+    try:
+        configFD = open("config.txt", "r")
+        for line in configFD:
+            line = line.replace("\r", "").replace("\n", "")
+            addressAndPort.append(line)
+    except IOError:
+        print("[C]: ERROR: Must first run the configure command before trying to connect with the server.")
+        return
+
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print("[C]: Socket created to connect to server.")
+    except socket.error as err:
+        print('[C]: Socket Open Error: {} \n'.format(err))
+        return
+
+    try:
+        # get the host name and the port number ready to be ready to connect to the server
+        addr = socket.gethostbyname(addressAndPort[0])
+
+        # now connect to the server
+        server_binding = (addr, int(addressAndPort[1]))
+        s.connect(server_binding)
+        print("[C]: Connected to the server.\n")
+    except:
+        print("[C]: There was a problem connecting to the server. Please try again.")
+        s.close()
+        return
+
+    # let the server know which command the client wants to use
+    s.send("upgrade".encode('utf-8'))
+
+    # reply from the server that tells the client that it is ready to go
+    data_from_server = s.recv(1024)
+
+    if data_from_server != "upgrade":
+        print("[C]: ERROR: An issue occurred when using the 'upgrade' command. Please try again.")
+        s.close()
+        return
+
+    # send the server the project name
+    s.send(sys.argv[2].encode('utf-8'))
+
+    # get response from the server
+    data_from_server = s.recv(1024)
+
+    if data_from_server == "FOUND":
+        parentPath = os.path.dirname(os.path.abspath(__file__))
+        updatePath = os.path.join(parentPath, str(sys.argv[2]), "Update.txt")
+
+        if not os.path.exists(updatePath):
+            print("[C]: Please do an update before trying to do an upgrade.\n")
+            return
+
+        print("found")
+        s.close()
+        return
+    else:
+        print("[C]: The server repository did not contain the project: " + str(sys.argv[2]) + "\n")
+        s.close()
+        return
+
+
 def client():
     if len(sys.argv) < 2:
         print("[C]: ERROR: Not enough arguments given. Please try again.")
@@ -499,7 +572,7 @@ def client():
     elif sys.argv[1] == "update":
         update()
     elif sys.argv[1] == "upgrade":
-        print("[C]: upgrade")
+        upgrade()
     elif sys.argv[1] == "commit":
         print("[C]: commit")
     elif sys.argv[1] == "push":
@@ -526,3 +599,23 @@ def client():
 
 if __name__ == '__main__':
     client()
+
+
+'''
+
+    dirPath = list()
+    mainFile = "o"
+    for x in updatePath.split("/"):
+        dirPath.append(x)
+    for x in dirPath:
+        if "." in x:
+            mainFile = x
+            dirPath.pop(dirPath.index(x))
+            break
+    path = ""
+    while dirPath:
+        path = path + str(dirPath.pop(0)) + "/"
+    print(path)
+    open(path+"random.txt", "w")
+    print(mainFile)
+'''

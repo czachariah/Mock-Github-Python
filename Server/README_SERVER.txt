@@ -18,3 +18,8 @@ Expected Commands:
     same. If the server or client runs into any trouble getting this done, then both sides will delete the Manifest and
     the project directory and tell the user (of the client) to try again.
 
+2) update
+
+    When a clinet tells the server it wants to update a specific project, the server will send over the Manifest.txt
+    from within that project.
+

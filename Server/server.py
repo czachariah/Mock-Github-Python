@@ -127,6 +127,24 @@ def serverAction(c):
             c.close()
             print("[S]: Client connection dealt with and terminated.\n")
             return
+    elif action == "upgrade":
+        # send the command back to the client to let it know that it ready to receive command specific info
+        c.send("upgrade".encode('utf-8'))
+
+        # get the new project name
+        data = c.recv(1024)
+
+        # check the current directory for the project folder
+        isFound = os.path.isdir(data)
+
+        if isFound:
+            print("[S]: The project directory has been found.")
+            c.send("FOUND".encode('utf-8'))
+
+        else:
+            print("[S]: The project directory has not been found.")
+            c.send("ERROR".encode('utf-8'))
+
     else:
         print("???")
 
