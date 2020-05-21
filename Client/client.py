@@ -140,11 +140,7 @@ def remove():
     file.close()
 
     if filePath in dataList:
-        oldV = int(dataList[0])
-        newV = oldV + 1
-        dataList[0] = str(newV)
         index = dataList.index(filePath)
-        dataList.pop(index)
         dataList.pop(index)
         dataList.pop(index)
         dataList.pop(index)
@@ -158,7 +154,7 @@ def remove():
     f.write(str(dataList.pop(0)) + "\n")
     count = 1
     for x in dataList:
-        if count != 4:
+        if count != 3:
             f.write(x + " , ")
             count = count + 1
         else:
@@ -215,23 +211,15 @@ def add():
             print("[C]: This file already exists in the Manifest.txt. and is up-to-date")
             return
         else:
-            oldV = int(dataList[0])
-            newV = oldV + 1
-            dataList[0] = str(newV)
             dataList[index + 2] = totalHash
             oldV = int(dataList[index + 1])
             newV = oldV + 1
             dataList[index + 1] = str(newV)
-            dataList[index + 3] = "N"
 
     else:
-        oldV = int(dataList[0])
-        newV = oldV + 1
-        dataList[0] = str(newV)
         dataList.append(filePath)
-        dataList.append(str(1))
+        dataList.append(str(0))
         dataList.append(totalHash)
-        dataList.append("N")
 
     # write into the Manifest
     os.remove(manifestPath)
@@ -239,7 +227,7 @@ def add():
     f.write(str(dataList.pop(0)) + "\n")
     count = 1
     for x in dataList:
-        if count != 4:
+        if count != 3:
             f.write(x + " , ")
             count = count + 1
         else:
@@ -324,8 +312,75 @@ def update():
             s.send("DONE".encode('utf-8'))
             print("[C]: The contents have been received. Now doing comparisons ...")
 
+            ManifestPath = os.path.join(parentPath, str(sys.argv[2]), "Manifest.txt")
+            # put all the contents of the Manifest into a list
+            manifestList = list()
+            try:
+                file = open(ManifestPath, "r")
+                for line in file:
+                    for word in line.replace("\n", "").split(" , "):
+                        manifestList.append(word)
+            except IOError:
+                print("[C]: ERROR opening the Manifest.txt file. Please try again.")
+                return
+            file.close()
 
+            # put all the contents of the Manifest_Server into a list
+            manifestServerList = list()
+            try:
+                file = open(serverManifestPath, "r")
+                for line in file:
+                    for word in line.replace("\n", "").split(" , "):
+                        manifestServerList.append(word)
+            except IOError:
+                print("[C]: ERROR opening the Manifest_Server.txt file. Please try again.")
+                return
+            file.close()
 
+            # make an Update.txt file
+            UpdatePath = os.path.join(parentPath, str(sys.argv[2]), "Update.txt")
+            if os.path.exists(UpdatePath):
+                os.remove(UpdatePath)
+            try:
+                f = open(UpdatePath, "a+")
+                updateList = list()
+                # gets rid of the Manifest version number in the list
+                manifestServerList.pop(0)
+                manifestList.pop(0)
+                while manifestServerList:
+                    if manifestServerList[0] in manifestList:
+                        index = manifestList.index(manifestServerList[0])
+                        if str(manifestServerList[1]) == str(manifestList[index + 1]):
+                            if str(manifestServerList[2]) != str(manifestList[index + 2]):
+                                print("A" + str(manifestServerList[0]))
+                                updateList.append(str("A"))
+                                updateList.append(str(manifestServerList.pop(0)))
+                                updateList.append(str(manifestServerList.pop(0)))
+                                updateList.append(str(manifestServerList.pop(0)))
+                                manifestList.pop(index)
+                                manifestList.pop(index)
+                                manifestList.pop(index)
+                        else:
+                            print("A" + str(manifestServerList[0]))
+                            updateList.append(str("A"))
+                            updateList.append(str(manifestServerList.pop(0)))
+                            updateList.append(str(manifestServerList.pop(0)))
+                            updateList.append(str(manifestServerList.pop(0)))
+                            manifestList.pop(index)
+                            manifestList.pop(index)
+                            manifestList.pop(index)
+                    else:
+                        print("A" + str(manifestServerList[0]))
+                        updateList.append(str("A"))
+                        updateList.append(str(manifestServerList.pop(0)))
+                        updateList.append(str(manifestServerList.pop(0)))
+                        updateList.append(str(manifestServerList.pop(0)))
+                # now go throgh the client manifest list and find files that the server does not have (these need to be uploaded)
+
+                # then write all the contents of the updateList into the Update.txt file
+            except:
+                print("[C]: ERROR opening the Update.txt file. Please try again.")
+                return
         except IOError:
             print("[S]: ERROR: There was a problem making the Manifest_Server.txt file in the project. Please try again.\n")
             s.send("ERROR".encode('utf-8'))
