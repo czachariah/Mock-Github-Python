@@ -1,1 +1,1 @@
-U , /Users/chriszachariah/Desktop/Mock GitHub/Client/P1/g.txt
+M , /Users/chriszachariah/Desktop/Mock GitHub/Client/P1/g.txt

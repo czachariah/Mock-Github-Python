@@ -141,6 +141,13 @@ def serverAction(c):
             print("[S]: The project directory has been found.")
             c.send("FOUND".encode('utf-8'))
 
+            moreCommands = c.recv
+            while moreCommands != "DONE":
+                print(moreCommands)
+                moreCommands = c.recv
+
+            print("[S]: The client has finished upgrading.")
+
         else:
             print("[S]: The project directory has not been found.")
             c.send("ERROR".encode('utf-8'))

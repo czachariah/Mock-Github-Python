@@ -464,10 +464,15 @@ def update():
                     os.remove(serverManifestPath)
                 else:
                     while updateList:
-                        print("[C]: " + str(updateList[0]) + " , " + str(updateList[1]))
-                        f.write(str(updateList[0]) + " , " + str(updateList[1]) + "\n")
-                        updateList.pop(0)
-                        updateList.pop(0)
+                        if str(updateList[0]) != "U":
+                            print("[C]: " + str(updateList[0]) + " , " + str(updateList[1]))
+                            f.write(str(updateList[0]) + " , " + str(updateList[1]) + "\n")
+                            updateList.pop(0)
+                            updateList.pop(0)
+                        else:
+                            print("[C]: " + str(updateList[0]) + " , " + str(updateList[1]))
+                            updateList.pop(0)
+                            updateList.pop(0)
                     print("")
                     f.close()
                     os.remove(serverManifestPath)
@@ -551,7 +556,53 @@ def upgrade():
             print("[C]: Please do an update before trying to do an upgrade.\n")
             return
 
-        print("found")
+        ManifestPath = os.path.join(parentPath, str(sys.argv[2]), "Manifest.txt")
+
+        # put all the contents of the Manifest into a list
+        manifestList = list()
+        try:
+            file = open(ManifestPath, "r")
+            for line in file:
+                for word in line.replace("\n", "").split(" , "):
+                    manifestList.append(word)
+        except IOError:
+            print("[C]: ERROR opening the Manifest.txt file. Please try again.")
+            s.close()
+            return
+        file.close()
+
+        updateList = list()
+        try:
+            file = open(updatePath, "r")
+            for line in file:
+                for word in line.replace("\n", "").split(" , "):
+                    updateList.append(word)
+        except IOError:
+            print("[C]: ERROR opening the Manifest.txt file. Please try again.")
+            s.close()
+            return
+
+        # kinda have the right idea ... but ... may need to make a loop that makes a new connection for every M or A
+
+        while updateList:
+            if updateList[0] == "D":
+                index = manifestList.index(updateList[1])
+                manifestList.pop(index)
+                manifestList.pop(index)
+                manifestList.pop(index)
+                updateList.pop(0)
+                updateList.pop(0)
+            elif updateList[0] == "M":
+                s.send("MOD".encode('utf-8'))
+                updateList.pop(0)
+                updateList.pop(0)
+            else:
+                s.send("ADD".encode('utf-8'))
+                updateList.pop(0)
+                updateList.pop(0)
+        print("[C]: The project is up-to-date.\n")
+        s.send("DONE".encode('utf-8'))
+        file.close()
         s.close()
         return
     else:
